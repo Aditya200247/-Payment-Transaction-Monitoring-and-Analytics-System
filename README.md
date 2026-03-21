@@ -9,7 +9,7 @@ A high-performance backend system for real-time payment transaction monitoring, 
 * Real-time transaction ingestion API
 * High-performance processing using Rust
 * Efficient communication via gRPC
-* Aggregated analytics (failure rate, revenue, merchant stats)
+* Aggregated analytics (failure rate,revenue, merchant stats)
 * Query APIs for transaction insights
 * Health & monitoring endpoints
 * Docker-based deployment
