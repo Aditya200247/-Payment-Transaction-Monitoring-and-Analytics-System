@@ -1,0 +1,7 @@
+{
+  "name": "payment-monitoring-system",
+  "scripts": {
+    "build": "cd payment-dashboard-ui && npm install && npm run build",
+    "install": "echo 'Installs handled in build script'"
+  }
+}
