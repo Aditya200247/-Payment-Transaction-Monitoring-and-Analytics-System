@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "payment-dashboard-ui/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
