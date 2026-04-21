@@ -1,11 +1,17 @@
+
 package gen
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+)
+
+const _ = grpc.SupportPackageIsVersion9
+
+const (
+	TransactionService_ProcessTransaction_FullMethodName = "/payment.TransactionService/ProcessTransaction"
 )
 
 type TransactionServiceClient interface {
@@ -21,8 +27,9 @@ func NewTransactionServiceClient(cc grpc.ClientConnInterface) TransactionService
 }
 
 func (c *transactionServiceClient) ProcessTransaction(ctx context.Context, in *TransactionRequest, opts ...grpc.CallOption) (*TransactionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TransactionResponse)
-	err := c.cc.Invoke(ctx, "/payment.TransactionService/ProcessTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, TransactionService_ProcessTransaction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -37,15 +44,19 @@ type TransactionServiceServer interface {
 type UnimplementedTransactionServiceServer struct{}
 
 func (UnimplementedTransactionServiceServer) ProcessTransaction(context.Context, *TransactionRequest) (*TransactionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ProcessTransaction not implemented")
+	return nil, status.Error(codes.Unimplemented, "method ProcessTransaction not implemented")
 }
 func (UnimplementedTransactionServiceServer) mustEmbedUnimplementedTransactionServiceServer() {}
+func (UnimplementedTransactionServiceServer) testEmbeddedByValue()                            {}
 
 type UnsafeTransactionServiceServer interface {
 	mustEmbedUnimplementedTransactionServiceServer()
 }
 
 func RegisterTransactionServiceServer(s grpc.ServiceRegistrar, srv TransactionServiceServer) {
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
 	s.RegisterService(&TransactionService_ServiceDesc, srv)
 }
 
@@ -59,7 +70,7 @@ func _TransactionService_ProcessTransaction_Handler(srv interface{}, ctx context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/payment.TransactionService/ProcessTransaction",
+		FullMethod: TransactionService_ProcessTransaction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TransactionServiceServer).ProcessTransaction(ctx, req.(*TransactionRequest))
