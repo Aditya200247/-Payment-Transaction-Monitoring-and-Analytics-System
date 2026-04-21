@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	 "github.com/lib/pq"
-
+	_ "github.com/lib/pq"
 	"payment-monitor/internal/models"
 )
 
@@ -20,11 +18,9 @@ func New(databaseURL string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open DB: %w", err)
 	}
-
 	if err := conn.Ping(); err != nil {
 		return nil, fmt.Errorf("DB unreachable: %w", err)
 	}
-
 	conn.SetMaxOpenConns(25)
 	conn.SetMaxIdleConns(5)
 	conn.SetConnMaxLifetime(5 * time.Minute)
