@@ -23,9 +23,19 @@ export default function StatsGrid() {
   const [data, setData] = useState({ grossVolume: 0, totalPayments: 0, failedPayments: 0, successRate: 0 });
   
   useEffect(() => {
-     const API_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-     axios.get(`${API_URL}/api/analytics`, { headers: { Authorization: `Bearer ${token}` }})
-       .then(res => setData(res.data))
+     const GO_API_URL = import.meta.env.VITE_GO_API_URL || 'http://localhost:8080/api/v1';
+     axios.get(`${GO_API_URL}/merchants/M-1234/stats`, { headers: { Authorization: `Bearer ${token}` }})
+       .then(res => {
+         const stats = res.data.data;
+         setData({
+           grossVolume: stats.gross_volume || 0,
+           totalPayments: stats.total_transactions || 0,
+           failedPayments: stats.failed_transactions || 0,
+           successRate: stats.total_transactions > 0 
+             ? ((stats.total_transactions - stats.failed_transactions) / stats.total_transactions) * 100 
+             : 0
+         });
+       })
        .catch(err => console.error("Could not load stats", err));
   }, [token]);
 

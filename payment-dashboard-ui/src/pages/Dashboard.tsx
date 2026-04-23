@@ -12,9 +12,9 @@ export default function Dashboard() {
   const [tx, setTx] = useState<any[]>([]);
 
   useEffect(() => {
-     const API_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-     axios.get(`${API_URL}/api/transactions`, { headers: { Authorization: `Bearer ${token}` }})
-       .then(res => setTx(res.data.slice(0, 4)))
+     const GO_API_URL = import.meta.env.VITE_GO_API_URL || 'http://localhost:8080/api/v1';
+     axios.get(`${GO_API_URL}/transactions?limit=4`, { headers: { Authorization: `Bearer ${token}` }})
+       .then(res => setTx(res.data.data || []))
        .catch(console.error);
   }, [token]);
 
@@ -70,8 +70,8 @@ export default function Dashboard() {
                        tx.map((t, idx) => (
                          <div key={idx} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-slate-100">
                             <div>
-                               <p className="text-sm font-medium text-slate-800">{t.id}</p>
-                               <p className="text-xs text-slate-400 font-mono mt-0.5">{new Date(t.date).toLocaleTimeString()}</p>
+                               <p className="text-sm font-medium text-slate-800">{t.transaction_id || t.id}</p>
+                               <p className="text-xs text-slate-400 font-mono mt-0.5">{new Date(t.created_at || t.date).toLocaleTimeString()}</p>
                             </div>
                             <div className="text-right">
                                <p className="text-sm font-bold">₹{t.amount}</p>
