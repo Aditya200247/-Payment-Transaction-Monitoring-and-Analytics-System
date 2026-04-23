@@ -38,7 +38,7 @@ export default function Reports() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(element).save();
+    html2pdf().set(opt as any).from(element).save();
   };
 
   const total = metrics?.total_transactions || 0;
