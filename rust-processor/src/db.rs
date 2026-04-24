@@ -16,8 +16,8 @@ impl Db {
             .connect(&database_url)
             .await?;
             
-        
-        sqlx::migrate!("./migrations").run(&pool).await?;
+        // Migrations are handled by the Go Gateway on startup
+        // sqlx::migrate!("./migrations").run(&pool).await?;
 
         Ok(Db { pool })
     }
