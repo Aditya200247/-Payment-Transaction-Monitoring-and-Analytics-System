@@ -1,10 +1,34 @@
-import { Bell, Search, UserCircle, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Bell, Search, UserCircle, LogOut, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifs(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (showNotifs && token) {
+      const GO_API_URL = import.meta.env.VITE_GO_API_URL || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:8080/api/v1');
+      axios.get(`${GO_API_URL}/transactions?limit=5`, { headers: { Authorization: `Bearer ${token}` }})
+        .then(res => setNotifs(res.data.data || []))
+        .catch(console.error);
+    }
+  }, [showNotifs, token]);
 
   const handleLogout = () => {
     logout();
@@ -26,10 +50,46 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-6">
-        <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 h-2 w-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse"></span>
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button 
+            onClick={() => setShowNotifs(!showNotifs)}
+            className={`relative p-2 transition-colors rounded-full ${showNotifs ? 'bg-slate-100 text-slate-800' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Bell className="h-5 w-5" />
+            <span className="absolute top-1 right-1 h-2 w-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse"></span>
+          </button>
+          
+          {showNotifs && (
+            <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 className="font-semibold text-slate-800 text-sm">Recent Activity</h3>
+                <span className="text-xs text-primary-600 cursor-pointer hover:underline" onClick={() => setShowNotifs(false)}>Close</span>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {notifs.length === 0 ? (
+                   <div className="p-6 text-center text-slate-500 text-sm">No recent activity</div>
+                ) : (
+                   notifs.map((tx, idx) => (
+                     <div key={idx} className="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors flex items-start gap-3">
+                       {tx.status === 'SUCCESS' ? (
+                          <div className="p-1.5 bg-green-100 rounded-full text-green-600 mt-0.5"><CheckCircle className="h-4 w-4" /></div>
+                       ) : (
+                          <div className="p-1.5 bg-rose-100 rounded-full text-rose-600 mt-0.5"><XCircle className="h-4 w-4" /></div>
+                       )}
+                       <div>
+                         <p className="text-sm text-slate-800 font-medium">
+                           {tx.status === 'SUCCESS' ? 'Payment Successful' : 'Payment Failed'}
+                         </p>
+                         <p className="text-xs text-slate-500 mt-0.5">₹{tx.amount?.toFixed(2)} via {tx.payment_method}</p>
+                         <p className="text-[10px] text-slate-400 mt-1">{new Date(tx.created_at).toLocaleString()}</p>
+                       </div>
+                     </div>
+                   ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="h-8 w-px bg-slate-200"></div>
         <div className="flex items-center gap-4 group">
           <div className="text-right hidden sm:block">

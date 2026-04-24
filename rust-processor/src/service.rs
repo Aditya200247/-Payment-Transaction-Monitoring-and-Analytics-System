@@ -46,11 +46,10 @@ impl TransactionService for PaymentService {
         
         let insert_tx_result = sqlx::query(
             r#"
-            INSERT INTO transactions (id, transaction_id, merchant_id, amount, status, payment_method, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO transactions (transaction_id, merchant_id, amount, status, payment_method, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
             "#
         )
-        .bind(tx_id)
         .bind(&req.transaction_id)
         .bind(&req.merchant_id)
         .bind(req.amount)
@@ -66,25 +65,28 @@ impl TransactionService for PaymentService {
             return Err(Status::internal("Database error"));
         }
 
-       
-        let failed_inc: i64 = if is_success { 0 } else { 1 };
-        let volume_inc: f64 = if is_success { req.amount } else { 0.0 };
+        let failed_int: i32 = if is_success { 0 } else { 1 };
+        let success_rate: f64 = if is_success { 100.0 } else { 0.0 };
 
         let update_stats_result = sqlx::query(
             r#"
-            INSERT INTO merchant_stats (merchant_id, total_transactions, failed_transactions, total_volume, updated_at)
+            INSERT INTO merchant_stats (merchant_id, total_transactions, total_amount, failed_transactions, success_rate)
             VALUES ($1, 1, $2, $3, $4)
             ON CONFLICT (merchant_id) DO UPDATE SET
-                total_transactions = merchant_stats.total_transactions + 1,
-                failed_transactions = merchant_stats.failed_transactions + $2,
-                total_volume = merchant_stats.total_volume + $3,
-                updated_at = $4
+                total_transactions  = merchant_stats.total_transactions + 1,
+                total_amount        = merchant_stats.total_amount + $2,
+                failed_transactions = merchant_stats.failed_transactions + $3,
+                success_rate        = ROUND(
+                    (CAST(merchant_stats.total_transactions + 1 - merchant_stats.failed_transactions - $3 AS FLOAT)
+                    / CAST(merchant_stats.total_transactions + 1 AS FLOAT)) * 100,
+                    2
+                )
             "#
         )
         .bind(&req.merchant_id)
-        .bind(failed_inc)
-        .bind(volume_inc)
-        .bind(now)
+        .bind(req.amount)
+        .bind(failed_int)
+        .bind(success_rate)
         .execute(&mut *tx)
         .await;
 
